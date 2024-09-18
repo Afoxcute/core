@@ -35,8 +35,18 @@ pub const EXAMPLES: &str = r"
   $ meroctl --home data/ --node-name node1 run --node-type coordinator
 ";
 
+const HELP_TEMPLATE: &str = "\
+{before-help}{name} {version}
+{about}
+{usage-heading}
+{tab}{usage}
+
+{all-args}{after-help}\
+";
+
 #[derive(Debug, Parser)]
 #[command(author, version, about, long_about = None)]
+#[command(help_template = HELP_TEMPLATE)]
 #[command(after_help = concatcp!(
     "Environment variables:\n",
     "  CALIMERO_HOME    Directory for config and data\n\n",
