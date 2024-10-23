@@ -667,6 +667,24 @@ impl Element {
         }
     }
 
+    /// Constructor for the root [`Element`].
+    #[must_use]
+    #[expect(clippy::missing_panics_doc, reason = "This is expected to be valid")]
+    pub fn root() -> Self {
+        let timestamp = time_now();
+        Self {
+            id: Id::root(),
+            is_dirty: true,
+            metadata: Metadata {
+                created_at: timestamp,
+                updated_at: timestamp,
+            },
+            merkle_hash: [0; 32],
+            #[expect(clippy::unwrap_used, reason = "This is expected to be valid")]
+            path: Path::new("::").unwrap(),
+        }
+    }
+
     /// The timestamp when the [`Element`] was first created.
     #[must_use]
     pub const fn created_at(&self) -> u64 {
