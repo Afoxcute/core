@@ -5,6 +5,7 @@ on:
     branches:
       - "**"
     paths:
+      - "**"
       - Cargo.toml
       - Cargo.lock
       - "crates/**"
@@ -61,29 +62,29 @@ jobs:
       - name: Install target for ${{ matrix.target }}
         run: rustup target add ${{ matrix.target }}
 
-      - name: Build meroctl binary
-        run: cargo build -p meroctl --release --target ${{ matrix.target }}
+      - name: Build merod binary
+        run: cargo build -p merod --release --target ${{ matrix.target }}
 
       - name: Extract version
         id: extract_version
         run: |
-          VERSION=$(cargo metadata --format-version 1 --no-deps | jq -r '.packages[] | select(.name == "meroctl") | .version')
+          VERSION=$(cargo metadata --format-version 1 --no-deps | jq -r '.packages[] | select(.name == "merod") | .version')
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Compress artifact using gzip
         id: compress
         run: |
           mkdir -p release
-          cp target/${{ matrix.target }}/release/meroctl release/
-          tar -czf meroctl_${{ matrix.target }}.tar.gz -C release meroctl
-          echo "artifact_path=meroctl_${{ matrix.target }}.tar.gz" >> $GITHUB_OUTPUT
+          cp target/${{ matrix.target }}/release/merod release/
+          tar -czf merod_${{ matrix.target }}.tar.gz -C release merod
+          echo "artifact_path=merod_${{ matrix.target }}.tar.gz" >> $GITHUB_OUTPUT
           echo "target=${{ matrix.target }}" >> $GITHUB_OUTPUT
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: meroctl_${{ matrix.target }}.tar.gz
-          path: meroctl_${{ matrix.target }}.tar.gz
+          name: merod_${{ matrix.target }}.tar.gz
+          path: merod_${{ matrix.target }}.tar.gz
           retention-days: 2
 
   upload_branch_artifact:
@@ -98,7 +99,7 @@ jobs:
       - name: Download Artifact
         uses: actions/download-artifact@v4
         with:
-          name: meroctl_${{ matrix.target }}.tar.gz
+          name: merod_${{ matrix.target }}.tar.gz
 
       - name: Sanitize ref name
         id: sanitize
@@ -125,13 +126,13 @@ jobs:
         run: |
           VERSION=${{ needs.build.outputs.version }}
           if gh release view "v$VERSION" >/dev/null 2>&1; then
-            echo "release_exists=true" >> $GITHUB_ENV
+            echo "release_exists=true" >> $GITHUB_OUTPUT
           else
-            echo "release_exists=false" >> $GITHUB_ENV
+            echo "release_exists=false" >> $GITHUB_OUTPUT
           fi
 
       - name: Create release if it does not exist
-        if: env.release_exists == 'false'
+        if: steps.check_release.outputs.release_exists == 'false'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -152,7 +153,7 @@ jobs:
       - name: Download Artifact
         uses: actions/download-artifact@v4
         with:
-          name: meroctl_${{ matrix.target }}.tar.gz
+          name: merod_${{ matrix.target }}.tar.gz
 
       - name: Check if artifact exists in release
         id: check_artifact
@@ -161,7 +162,7 @@ jobs:
         run: |
           VERSION=${{ needs.build.outputs.version }}
           TARGET=${{ matrix.target }}
-          ARTIFACT_NAME="meroctl_${TARGET}.tar.gz"
+          ARTIFACT_NAME="merod_${TARGET}.tar.gz"
           ASSET_ID=$(gh api \
             -H "Authorization: token $GITHUB_TOKEN" \
             -H "Accept: application/vnd.github.v3+json" \
@@ -181,4 +182,4 @@ jobs:
         run: |
           VERSION=${{ needs.build.outputs.version }}
           TARGET=${{ matrix.target }}
-          gh release upload "v$VERSION" meroctl_${TARGET}.tar.gz
+          gh release upload "v$VERSION" merod_${TARGET}.tar.gz
